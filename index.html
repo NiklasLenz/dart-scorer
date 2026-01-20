@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dart Scorer – Master Out</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:#121925;
+      --muted:#8ea0b6;
+      --text:#e8f0ff;
+      --accent:#4fd1c5;
+      --danger:#ff5a7a;
+      --ok:#7CFF9B;
+      --border:rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
+      background: radial-gradient(1000px 600px at 20% 0%, rgba(79,209,197,.12), transparent 50%),
+      radial-gradient(800px 500px at 90% 10%, rgba(124,255,155,.10), transparent 55%),
+      var(--bg);
+      color:var(--text);
+      padding:20px;
+    }
+    h1{margin:0 0 14px 0; font-size:22px}
+    .grid{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    label{font-size:12px; color:var(--muted)}
+    input, button, select, textarea{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+    }
+    input:focus, textarea:focus, select:focus{border-color: rgba(79,209,197,.55)}
+    button{
+      cursor:pointer;
+      transition: transform .04s ease, border-color .2s ease, background .2s ease;
+      user-select:none;
+    }
+    button:hover{border-color: rgba(79,209,197,.55)}
+    button:active{transform: translateY(1px)}
+    .btn-accent{border-color: rgba(79,209,197,.55); background: rgba(79,209,197,.12)}
+    .btn-danger{border-color: rgba(255,90,122,.55); background: rgba(255,90,122,.10)}
+    .muted{color:var(--muted)}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:rgba(255,255,255,.02);
+    }
+    .players{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .player{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(0,0,0,.12);
+    }
+    .player.active{
+      border-color: rgba(79,209,197,.55);
+      box-shadow: 0 0 0 2px rgba(79,209,197,.08) inset;
+    }
+    .score{
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.3px;
+    }
+    .ok{color:var(--ok)}
+    .danger{color:var(--danger)}
+    .hr{height:1px; background:var(--border); margin:12px 0}
+    .help{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+    .two{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:16px;
+    }
+    @media (max-width: 980px){
+      .two{grid-template-columns:1fr}
+    }
+    .history{
+      max-height: 360px;
+      overflow:auto;
+      padding-right:4px;
+    }
+    .hist-item{
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      margin-bottom:8px;
+      background:rgba(255,255,255,.015);
+    }
+    .hist-item .top{
+      display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+    }
+    .small{font-size:12px; color:var(--muted)}
+    .checkout-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .checkout{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.015);
+    }
+    .checkout .line{font-weight:700}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      padding:2px 6px;
+      border:1px solid var(--border);
+      border-bottom-color: rgba(255,255,255,.18);
+      border-radius:8px;
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+    }
+  </style>
+</head>
+<body>
+<h1>🎯 Dart Scorer (Master Out)</h1>
+
+<div class="grid">
+  <!-- LEFT: Setup + Players -->
+  <div class="card">
+    <div class="row">
+      <div style="flex:1">
+        <label>Startscore</label><br/>
+        <input id="startScore" type="number" min="1" step="1" value="501" style="width:100%" />
+      </div>
+      <div style="flex:1">
+        <label>Modus</label><br/>
+        <select id="outMode" style="width:100%">
+          <option value="master">Master Out (Finish auf Double/Bull)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <label>Spieler (2–4)</label>
+    <div class="row" style="margin-top:8px">
+      <input id="p1" placeholder="Spieler 1" value="Spieler 1" style="flex:1" />
+      <input id="p2" placeholder="Spieler 2" value="Spieler 2" style="flex:1" />
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input id="p3" placeholder="Spieler 3 (optional)" style="flex:1" />
+      <input id="p4" placeholder="Spieler 4 (optional)" style="flex:1" />
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button class="btn-accent" id="btnNew" style="flex:1">Neues Spiel</button>
+      <button class="btn-danger" id="btnReset" style="flex:1">Zurücksetzen</button>
+    </div>
+
+    <div class="hr"></div>
+
+    <div id="players" class="players"></div>
+
+    <div class="hr"></div>
+
+    <div class="help">
+      Eingabe pro Aufnahme (max. 3 Darts) als Notation, z. B.:
+      <span class="kbd">T20 D20 0</span>,
+      <span class="kbd">S19 S19 D16</span>,
+      <span class="kbd">DB</span>, <span class="kbd">SB</span>.<br/>
+      Zulässig: <span class="kbd">S1..S20</span>, <span class="kbd">D1..D20</span>, <span class="kbd">T1..T20</span>,
+      <span class="kbd">SB(25)</span>, <span class="kbd">DB(50)</span>, <span class="kbd">0</span>.
+    </div>
+  </div>
+
+  <!-- RIGHT: Scoring + Checkout + History -->
+  <div class="two">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="muted" style="font-size:12px">Aktiver Spieler</div>
+          <div id="activeName" style="font-size:18px; font-weight:700">–</div>
+        </div>
+        <div class="pill">
+          <span class="muted">Rest</span>
+          <span id="activeRemaining" class="score">–</span>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <label>Aufnahme eingeben (1–3 Darts)</label>
+      <div class="row" style="margin-top:8px">
+        <input id="turnInput" placeholder="z. B. T20 T20 D20" style="flex:1" />
+        <button id="btnAdd" class="btn-accent">Eintragen</button>
+        <button id="btnUndo">Undo</button>
+      </div>
+      <div id="msg" class="help" style="margin-top:10px"></div>
+
+      <div class="hr"></div>
+
+      <div class="row" style="justify-content:space-between; align-items:baseline">
+        <div>
+          <div style="font-weight:700">Historie</div>
+          <div class="small">Letzte Aufnahmen</div>
+        </div>
+      </div>
+      <div id="history" class="history" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:700">Master Out – mögliche Checkouts</div>
+      <div class="small">Wird angezeigt, sobald ein Checkout möglich ist (≤ 170) und als Double endet.</div>
+      <div class="hr"></div>
+
+      <div id="checkoutBox" class="checkout-list">
+        <div class="muted">Noch keine Checkout-Vorschläge.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    // ---------- Dart value model ----------
+    const segments = [];
+    for (let n=1; n<=20; n++){
+      segments.push({code:`S${n}`, v:n, type:'S', label:`S${n}`});
+      segments.push({code:`D${n}`, v:2*n, type:'D', label:`D${n}`});
+      segments.push({code:`T${n}`, v:3*n, type:'T', label:`T${n}`});
+    }
+    segments.push({code:'SB', v:25, type:'SB', label:'SB'});
+    segments.push({code:'DB', v:50, type:'DB', label:'DB'});
+    segments.push({code:'0', v:0, type:'M', label:'0'});
+
+    const isFinisher = (seg) => seg.type === 'D' || seg.type === 'DB'; // Master out
+    const byCode = Object.fromEntries(segments.map(s => [s.code, s]));
+
+    // ---------- State ----------
+    let game = null;
+
+    function newGame(){
+      const start = intVal($('#startScore').value, 501);
+      const names = [$('#p1').value, $('#p2').value, $('#p3').value, $('#p4').value]
+        .map(s => (s||'').trim())
+        .filter(Boolean);
+
+      if (names.length < 2){
+        toast('Bitte mindestens 2 Spieler eintragen.');
+        return;
+      }
+      if (start <= 0){
+        toast('Startscore muss > 0 sein.');
+        return;
+      }
+
+      game = {
+        start,
+        players: names.map(n => ({ name:n, remaining:start, legs:0 })),
+        active: 0,
+        history: [] // {playerIdx, input, darts:[codes], scored, before, after, bust, finished}
+      };
+      renderAll();
+      toast('Neues Spiel gestartet.');
+    }
+
+    function resetAll(){
+      game = null;
+      $('#players').innerHTML = '';
+      $('#history').innerHTML = '';
+      $('#activeName').textContent = '–';
+      $('#activeRemaining').textContent = '–';
+      $('#checkoutBox').innerHTML = '<div class="muted">Noch keine Checkout-Vorschläge.</div>';
+      $('#msg').textContent = '';
+    }
+
+    // ---------- Scoring ----------
+    function parseTurn(text){
+      const raw = (text||'').trim().toUpperCase();
+      if (!raw) return [];
+
+      const parts = raw.split(/[\s,;]+/).filter(Boolean);
+      if (parts.length > 3) throw new Error('Maximal 3 Darts pro Aufnahme.');
+
+      const darts = parts.map(p => {
+        if (p === 'B' || p === 'BULL') return 'DB';
+        if (p === '25') return 'SB';
+        if (p === '50') return 'DB';
+        if (p === 'MISS' || p === 'M') return '0';
+
+        // Normalize like "20" => S20
+        if (/^\d+$/.test(p)){
+          const n = Number(p);
+          if (n>=0 && n<=20) return n===0 ? '0' : `S${n}`;
+          if (n===25) return 'SB';
+          if (n===50) return 'DB';
+        }
+        // Must match known code
+        if (!byCode[p]) throw new Error(`Unbekannte Eingabe: "${p}".`);
+        return p;
+      });
+      return darts;
+    }
+
+    function scoreTurn(){
+      if (!game) return toast('Bitte zuerst ein neues Spiel starten.');
+      const playerIdx = game.active;
+      const p = game.players[playerIdx];
+      const input = $('#turnInput').value;
+
+      let darts;
+      try{
+        darts = parseTurn(input);
+        if (darts.length === 0) throw new Error('Bitte 1–3 Darts eingeben.');
+      } catch(err){
+        toast(err.message, true);
+        return;
+      }
+
+      const before = p.remaining;
+      const values = darts.map(c => byCode[c].v);
+      const scored = values.reduce((a,b)=>a+b,0);
+      let after = before - scored;
+
+      let bust = false;
+      let finished = false;
+
+      // Master out rules:
+      // - Cannot go below 0 (bust -> score not counted)
+      // - Cannot leave 1 (bust)
+      // - If reaches 0, last dart must be a finisher (double or DB)
+      if (after < 0) bust = true;
+      if (after === 1) bust = true;
+
+      if (!bust && after === 0){
+        const last = byCode[darts[darts.length-1]];
+        if (!isFinisher(last)) bust = true;
+        else finished = true;
+      }
+
+      if (bust){
+        after = before; // score not counted for bust
+      } else {
+        p.remaining = after;
+      }
+
+      game.history.push({ playerIdx, input: input.trim(), darts, scored, before, after, bust, finished });
+
+      // Next player / Leg handling
+      if (finished){
+        p.legs += 1;
+        // Reset remaining for new leg
+        for (const pl of game.players) pl.remaining = game.start;
+        toast(`${p.name} hat das Leg gecheckt! ✅`);
+        // Next leg starts with next player
+        game.active = (playerIdx + 1) % game.players.length;
+      } else {
+        game.active = (playerIdx + 1) % game.players.length;
+      }
+
+      $('#turnInput').value = '';
+      renderAll();
+    }
+
+    function undo(){
+      if (!game || game.history.length === 0) return toast('Nichts zum Rückgängig machen.');
+      const last = game.history.pop();
+
+      // If it was a finished leg, we need to restore leg state:
+      // We keep it simple: restore remaining values by recomputing from scratch.
+      // (Robust and avoids edge cases.)
+      const names = game.players.map(p => p.name);
+      const start = game.start;
+      const legs = game.players.map(p => p.legs);
+
+      // Rebuild fresh and replay all history except last
+      const oldHist = [...game.history];
+      game = {
+        start,
+        players: names.map((n,i) => ({ name:n, remaining:start, legs:legs[i] })),
+        active: 0,
+        history: []
+      };
+
+      // Reset legs and replay with correct leg counts
+      // Because undo might revert a checkout, also revert leg count if needed:
+      if (last.finished){
+        game.players[last.playerIdx].legs = Math.max(0, game.players[last.playerIdx].legs - 1);
+      }
+
+      // Replay
+      for (const h of oldHist){
+        // Force active to match original at that time
+        game.active = h.playerIdx;
+        $('#turnInput').value = h.input;
+        scoreTurnSilent();
+      }
+      $('#turnInput').value = '';
+      toast('Letzte Aufnahme rückgängig gemacht.');
+      renderAll();
+    }
+
+    // Silent scoring used for replay (no toast spam)
+    function scoreTurnSilent(){
+      const playerIdx = game.active;
+      const p = game.players[playerIdx];
+      const input = $('#turnInput').value;
+
+      const darts = parseTurn(input);
+      const before = p.remaining;
+      const scored = darts.map(c => byCode[c].v).reduce((a,b)=>a+b,0);
+      let after = before - scored;
+
+      let bust = false;
+      let finished = false;
+      if (after < 0) bust = true;
+      if (after === 1) bust = true;
+
+      if (!bust && after === 0){
+        const last = byCode[darts[darts.length-1]];
+        if (!isFinisher(last)) bust = true;
+        else finished = true;
+      }
+      if (bust) after = before;
+      else p.remaining = after;
+
+      game.history.push({ playerIdx, input: input.trim(), darts, scored, before, after, bust, finished });
+
+      if (finished){
+        p.legs += 1;
+        for (const pl of game.players) pl.remaining = game.start;
+        game.active = (playerIdx + 1) % game.players.length;
+      } else {
+        game.active = (playerIdx + 1) % game.players.length;
+      }
+    }
+
+    // ---------- Checkout suggestions (Master Out) ----------
+    function checkoutSuggestions(remaining, limit=6){
+      if (remaining < 2 || remaining > 170) return [];
+
+      // Build sequences length 1..3, last dart must be finisher.
+      const fins = segments.filter(isFinisher);
+      const all = segments; // includes singles, triples, bulls, miss
+
+      const results = [];
+
+      // 1 dart
+      for (const l of fins){
+        if (l.v === remaining){
+          results.push([l.code]);
+        }
+      }
+
+      // 2 darts: a + last
+      for (const a of all){
+        const need = remaining - a.v;
+        if (need <= 0) continue;
+        for (const l of fins){
+          if (l.v === need){
+            results.push([a.code, l.code]);
+          }
+        }
+      }
+
+      // 3 darts: a + b + last
+      for (const a of all){
+        const need1 = remaining - a.v;
+        if (need1 <= 0) continue;
+        for (const b of all){
+          const need2 = need1 - b.v;
+          if (need2 <= 0) continue;
+          for (const l of fins){
+            if (l.v === need2){
+              results.push([a.code, b.code, l.code]);
+            }
+          }
+        }
+      }
+
+      // Deduplicate
+      const uniq = [];
+      const seen = new Set();
+      for (const r of results){
+        const key = r.join(' ');
+        if (!seen.has(key)){
+          seen.add(key);
+          uniq.push(r);
+        }
+      }
+
+      // Sort: fewer darts first, then prefer higher total in first dart, then second, then prefer D20/DB etc.
+      const finRank = (code) => {
+        if (code === 'DB') return 1000;
+        const seg = byCode[code];
+        if (seg.type === 'D') return 500 + seg.v; // higher double preferred
+        return seg.v;
+      };
+
+      uniq.sort((x,y) => {
+        if (x.length !== y.length) return x.length - y.length;
+        // Compare dart-by-dart value
+        const maxLen = Math.max(x.length, y.length);
+        for (let i=0; i<maxLen; i++){
+          const vx = byCode[x[i]]?.v ?? 0;
+          const vy = byCode[y[i]]?.v ?? 0;
+          if (vx !== vy) return vy - vx;
+        }
+        // Compare finisher rank (last dart)
+        return finRank(y[y.length-1]) - finRank(x[x.length-1]);
+      });
+
+      return uniq.slice(0, limit);
+    }
+
+    // ---------- Rendering ----------
+    function renderAll(){
+      renderPlayers();
+      renderHeader();
+      renderHistory();
+      renderCheckout();
+    }
+
+    function renderPlayers(){
+      const box = $('#players');
+      if (!game){ box.innerHTML = '<div class="muted">Noch kein Spiel gestartet.</div>'; return; }
+
+      box.innerHTML = '';
+      game.players.forEach((p, idx) => {
+        const el = document.createElement('div');
+        el.className = 'player' + (idx === game.active ? ' active' : '');
+        el.innerHTML = `
+        <div>
+          <div style="font-weight:700">${escapeHtml(p.name)}</div>
+          <div class="small">Legs: ${p.legs}</div>
+        </div>
+        <div class="score">${p.remaining}</div>
+      `;
+        box.appendChild(el);
+      });
+    }
+
+    function renderHeader(){
+      if (!game){
+        $('#activeName').textContent = '–';
+        $('#activeRemaining').textContent = '–';
+        return;
+      }
+      const p = game.players[game.active];
+      $('#activeName').textContent = p.name;
+      $('#activeRemaining').textContent = p.remaining;
+    }
+
+    function renderHistory(){
+      const box = $('#history');
+      if (!game){ box.innerHTML = '<div class="muted">–</div>'; return; }
+
+      const items = [...game.history].slice(-12).reverse();
+      if (items.length === 0){
+        box.innerHTML = '<div class="muted">Noch keine Aufnahmen.</div>';
+        return;
+      }
+      box.innerHTML = items.map(h => {
+        const pn = game.players[h.playerIdx]?.name ?? `Spieler ${h.playerIdx+1}`;
+        const status = h.finished ? `<span class="ok">CHECKOUT</span>` : (h.bust ? `<span class="danger">BUST</span>` : `<span class="muted">OK</span>`);
+        const darts = h.darts.join(' ');
+        return `
+        <div class="hist-item">
+          <div class="top">
+            <div><span style="font-weight:700">${escapeHtml(pn)}</span> <span class="small">(${h.before} → ${h.after})</span></div>
+            <div class="small">${status}</div>
+          </div>
+          <div class="small">Darts: <span class="kbd">${escapeHtml(darts)}</span> &nbsp;|&nbsp; Score: ${h.scored}</div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    function renderCheckout(){
+      const box = $('#checkoutBox');
+      if (!game){
+        box.innerHTML = '<div class="muted">Noch keine Checkout-Vorschläge.</div>';
+        return;
+      }
+      const rem = game.players[game.active].remaining;
+      const list = checkoutSuggestions(rem, 8);
+
+      if (rem === 0){
+        box.innerHTML = `<div class="muted">Leg ist beendet.</div>`;
+        return;
+      }
+
+      if (list.length === 0){
+        box.innerHTML = `<div class="muted">Kein Master-Out Checkout in 1–3 Darts für ${rem}.</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map(seq => {
+        const total = seq.map(c => byCode[c].v).reduce((a,b)=>a+b,0);
+        return `
+        <div class="checkout">
+          <div class="line"><span class="kbd">${seq.join(' ')}</span></div>
+          <div class="small">Summe: ${total} (Finish: ${seq[seq.length-1]})</div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    // ---------- Helpers ----------
+    function $(sel){ return document.querySelector(sel); }
+    function intVal(x, fallback){ const n = Number(x); return Number.isFinite(n) ? Math.trunc(n) : fallback; }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function toast(text, isError=false){
+      const el = $('#msg');
+      el.textContent = text;
+      el.style.color = isError ? 'var(--danger)' : 'var(--muted)';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { el.textContent = ''; el.style.color = 'var(--muted)'; }, 2600);
+    }
+
+    // ---------- Wiring ----------
+    $('#btnNew').addEventListener('click', newGame);
+    $('#btnReset').addEventListener('click', resetAll);
+    $('#btnAdd').addEventListener('click', scoreTurn);
+    $('#btnUndo').addEventListener('click', undo);
+    $('#turnInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') scoreTurn();
+    });
+
+    // Start with a clean state
+    resetAll();
+  })();
+</script>
+</body>
+</html>
